@@ -1,0 +1,41 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+
+metadata:
+  name: api-keda
+  namespace: istio-demo
+
+spec:
+  scaleTargetRef:
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    name: api
+
+  pollingInterval: 15
+
+  cooldownPeriod: 30
+
+  minReplicaCount: 2
+
+  maxReplicaCount: 10
+
+  triggers:
+    - type: prometheus
+
+      metadata:
+        serverAddress: http://monitoring-kube-prometheus-prometheus.monitoring:9090
+        
+
+        metricName: istio_requests_total
+
+        query: |
+          sum(
+            rate(
+              istio_requests_total{
+                destination_workload="api"
+              }[1m]
+            )
+          )
+
+        threshold: "1"
+
